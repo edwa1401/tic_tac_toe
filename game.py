@@ -2,12 +2,12 @@ import random
 from random import randint
 
 
-def game_screen(screen_cells: list[list[list[str]]]) -> None:
-    print(f'---------------------')
+def draw_game_screen(screen_cells: list[list[str]]) -> None:
+    print('----------')
     print(f'{screen_cells[0][0]}|{screen_cells[0][1]}|{screen_cells[0][2]}|')
-    print(f'---------------------')
+    print('----------')
     print(f'{screen_cells[1][0]}|{screen_cells[1][1]}|{screen_cells[1][2]}|')
-    print(f'---------------------')
+    print('----------')
     print(f'{screen_cells[2][0]}|{screen_cells[2][1]}|{screen_cells[2][2]}|')
 
 
@@ -16,128 +16,132 @@ def random_choise_first_player() -> int:
     return first_player
 
 
-def check_winner(computers_cells: list[int], players_cells: list[int],
-                 game: bool) -> None:
-    #Пока не получилось#
+def check_winner(computers_cells: set[tuple[int, int]], players_cells: set[
+                tuple[int, int]]) -> bool:
     win_ranges = [
-        [[0, 0], [0, 1], [0, 2]],
-        [[1, 0], [1, 1], [1, 2]],
-        [[2, 0], [2, 1], [2, 2]],
-        [[0, 0], [1, 0], [2, 0]],
-        [[0, 1], [1, 1], [2, 1]],
-        [[0, 2], [1, 2], [2, 2]],
-        [[0, 0], [1, 1], [2, 2]],
-        [[0, 2], [1, 1], [2, 0]]
+        {(0, 0), (0, 1), (0, 2)},
+        {(1, 0), (1, 1), (1, 2)},
+        {(2, 0), (2, 1), (2, 2)},
+        {(0, 0), (1, 0), (2, 0)},
+        {(0, 1), (1, 1), (2, 1)},
+        {(0, 2), (1, 2), (2, 2)},
+        {(0, 0), (1, 1), (2, 2)},
+        {(0, 2), (1, 1), (2, 0)}
     ]
-    if sorted(players_cells) in win_ranges:
-        print('Вы выиграли')
-        game is False
-    elif sorted(computers_cells) in win_ranges:
-        print('Компьютер выиграл')
-        game is False
-    else:
-        pass
+
+    for item in win_ranges:
+        if item - computers_cells == set():
+            print('Компьютер выиграл')
+            return False
+        elif item - players_cells == set():
+            print('Игрок выиграл')
+            return False
 
 
-def check_coordinates_for_input(x: int, y: int, empty_cells: list[list[int]]
-                                ) -> bool:
-    if x < 3 and x >= 0:
-        return True
-    elif y < 3 and y >= 0:
-        return True
-    elif [x, y] in empty_cells:
+def check_coordinates_for_input(empty_cells: list[tuple[int, int]
+                                                  ], x: int, y: int,) -> bool:
+    # не работает
+    if any(isinstance((x, y), tuple) for (x, y) in empty_cells):
         return True
     else:
         return False
 
 
-def remove_filled_cells_from_empty(empty_cells: list[list[int]], a: int,
-                                   b: int, game: bool
-                                   ) -> list[list[int]] | str | bool:
-    if len(empty_cells) > 0:
+def remove_filled_cells_from_empty(empty_cells: list[tuple[int, int]], x: int,
+                                   y: int) -> list[tuple[int, int]]:
+    try:
+        empty_cells.remove((x, y))
+    except ParseError as error:
+        print(str(error))
+    return empty_cells
+
+
+class AppError(Exception):
+    def __init__(self, msg: str) -> None:
+        super().__init__(msg)
+        self.msg = msg
+
+
+class ParseError(AppError):
+    def __init__(self, msg: str, cmd: str) -> None:
+        super().__init__(msg)
+        self.cmd = cmd
+
+
+def take_players_coord(empty_cells: list[tuple[int, int]]) -> tuple[int, int]:
+    line = input('Введите x, y через пробел от 0 до 2х ')
+    x = None
+    y = None
+    while x is not None and y is not None:
         try:
-            empty_cells.remove([a, b])
-            return empty_cells
-        except ValueError:
-            print(f"Эти ячейки не пустые")
-    else:
-        return game is False
+            x, y = validate_players_coord(line, empty_cells)
+        except ParseError as error:
+            print(str(error))
+    return x, y
 
 
-def players_coord(empty_cells: list[list[int]]) -> tuple[int, int]: 
+def validate_players_coord(line: str, empty_cells: list[tuple[
+        int, int]]) -> tuple[int, int]:
     try:
-        x, y = map(int, input('Введите x, y через пробел от 0 до 2х ').split())
-        if type(x) != int or type(y) != int:
-            print('Вы ввели буквы, а нужно цифры')
-        elif check_coordinates_for_input(x, y, empty_cells) is False:
-            print('Введены некорректные коoрдинаты ячейки')
-        else:
-            return x, y
-    except ValueError:
-        print("Не ввели значение")
+        x, y = map(int, line.split())
+        if check_coordinates_for_input(empty_cells, x, y) is False:
+            raise ValueError('Введены некорректные коoрдинаты ячейки')
+        return x, y
+    except ValueError as error:
+        raise ValueError("Не ввели значение") from error
 
 
-def computers_coord(empty_cells: list[list[int]], game: bool
-                    ) -> tuple[int, int] | bool:
-    if len(empty_cells) > 0:
-        x_, y_ = random.choice(empty_cells)
-        return x_, y_
-    else:
-        game is False
+def choice_computers_coordinates(empty_cells: list[tuple[
+        int, int]]) -> tuple[int, int]:
+    try:
+        x, y = random.choice(empty_cells)
+        return x, y
+    except ValueError as error:
+        raise ValueError("Нет пустых ячеек") from error
 
 
-def players_pass(empty_cells: list[list[int]],
-                 screen_cells: list[list[list[str]]], yours_figure: str,
-                 players_cells: list[int], game: bool) -> None:
+def player_pass(empty_cells: list[tuple[int, int]], screen_cells: list[list
+                [str]], yours_figure: str, players_cells: set[tuple[
+                    int, int]]) -> bool:
     print('Игрок ходит')
-    try:
-        x, y = players_coord(empty_cells)
-        screen_cells[x][y] = [yours_figure]
-        game_screen(screen_cells)
-        remove_filled_cells_from_empty(empty_cells, x, y, game)
-        print(f'Остались пустые ячейки {empty_cells}')
-        players_cells.extend([[x, y]])
-        if len(empty_cells) == 0:
-            game is False
-    except TypeError:
-        game is False
+    x, y = take_players_coord(empty_cells)
+    screen_cells[x][y] = yours_figure
+    draw_game_screen(screen_cells)
+    remove_filled_cells_from_empty(empty_cells, x, y)
+    players_cells.add((x, y))
+    return len(empty_cells) != 0
 
 
-def computers_pass(empty_cells: list[list[int]],
-                   screen_cells: list[list[list[str]]],
-                   computers_figure: str, computers_cells: list[int], 
-                   game: bool) -> None:
+def computer_pass(empty_cells: list[tuple[int, int]], screen_cells: list[
+                    list[str]], computers_figure: str, computers_cells: set[
+                        tuple[int, int]]) -> bool:
     print('Компьютер ходит')
-    if computers_coord(empty_cells, game) is False:
-        print("Не осталось пустых клеток")
-        game is False
-    else:
-        x_, y_ = computers_coord(empty_cells, game)
-        screen_cells[x_][y_] = [computers_figure]
-        game_screen(screen_cells)
-        remove_filled_cells_from_empty(empty_cells, x_, y_, game)
-        print(f'Остались пустые ячейки {empty_cells}')
-        computers_cells.extend([[x_, y_]])
+    x, y = choice_computers_coordinates(empty_cells)
+    screen_cells[x][y] = computers_figure
+    draw_game_screen(screen_cells)
+    remove_filled_cells_from_empty(empty_cells, x, y)
+    computers_cells.add((x, y))
 
 
 def main() -> None:
 
     screen_cells = [
-        [[" "], [" "], [" "]],
-        [[" "], [" "], [" "]],
-        [[" "], [" "], [" "]]
+        [" ", " ", " "],
+        [" ", " ", " "],
+        [" ", " ", " "]
     ]
 
     empty_cells = [
-        [0, 0], [0, 1], [0, 2],
-        [1, 0], [1, 1], [1, 2],
-        [2, 0], [2, 1], [2, 2]
+        (0, 0), (0, 1), (0, 2),
+        (1, 0), (1, 1), (1, 2),
+        (2, 0), (2, 1), (2, 2)
     ]
 
-    players_cells: list[int] = []
-    computers_cells: list[int] = []
+    players_cells: set[tuple[int, int]] = set()
+    computers_cells: set[tuple[int, int]] = set()
 
-    game_screen(screen_cells)
+    draw_game_screen(screen_cells)
+
     game = True
     if random_choise_first_player() == 1:
         yours_figure = "X"
@@ -150,44 +154,44 @@ def main() -> None:
 
     while game is True:
         if yours_figure == 'X':
-            players_pass(empty_cells, screen_cells, yours_figure,
-                         players_cells, game)
-            if game is False:
+            game = player_pass(empty_cells, screen_cells, yours_figure,
+                               players_cells)
+            if not game:
                 break
             print(f'{yours_figure} в ячейках {players_cells}')
             if len(players_cells) >= 3:
-                check_winner(players_cells, computers_cells, game)
-                if game is False:
+                check_winner(players_cells, computers_cells)
+                if not game:
                     break
 
-            computers_pass(empty_cells, screen_cells, computers_figure,
-                           computers_cells, game)
-            if game is False:
+            game = computer_pass(empty_cells, screen_cells, computers_figure, 
+                                 computers_cells)
+            if not game:
                 break
             print(f'{computers_figure} в ячейках {computers_cells}')
-            if len(computers_cells) >= 3:
-                check_winner(players_cells, computers_cells, game)
-                if game is False:
+            if len(players_cells) >= 3:
+                check_winner(players_cells, computers_cells)
+                if not game:
                     break
         else:
-            computers_pass(empty_cells, screen_cells, computers_figure,
-                           computers_cells, game)
-            if game is False:
+            game = computer_pass(empty_cells, screen_cells, computers_figure,
+                                 computers_cells)
+            if not game:
                 break
             print(f'{computers_figure} в ячейках {computers_cells}')
-            if len(computers_cells) >= 3:
-                check_winner(players_cells, computers_cells, game)
-                if game is False:
+            if len(players_cells) >= 3:
+                check_winner(players_cells, computers_cells)
+                if not game:
                     break
 
-            players_pass(empty_cells, screen_cells, yours_figure,
-                         players_cells, game)
-            if game is False:
+            game = player_pass(empty_cells, screen_cells, yours_figure,
+                               players_cells)
+            if not game:
                 break
             print(f'{yours_figure} в ячейках {players_cells}')
             if len(players_cells) >= 3:
-                check_winner(players_cells, computers_cells, game)
-                if game is False:
+                check_winner(players_cells, computers_cells)
+                if not game:
                     break
 
     print('Игра окончена')
