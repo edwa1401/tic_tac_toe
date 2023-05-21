@@ -1,21 +1,21 @@
-from game import validate_players_coord, check_winner, remove_filled_cells_from_empty, check_coordinates_for_input, choice_computers_coordinates
+from game import validate_players_coord, check_winner, remove_filled_cells_from_empty, check_coordinates_for_input, choice_computers_coordinates, ParseError
 import pytest
 
 
 def test__validate_players_coor__players_input_parsed():
-    empty_cells = [[0, 1], [0, 2]]
+    empty_cells = [(0, 1), (0, 2)]
     assert validate_players_coord('0 1', empty_cells) == (0, 1)
 
 
 def test__validate_players_input_failed():
     empty_cells = [[0, 1], [0, 2]]
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(ParseError) as error:
         validate_players_coord('x 1', empty_cells)
         assert str(error.value) == "Не ввели значение"
 
 
 def test__check_winner__computer_win():
-    computers_cells = {(1, 1), (0, 0), (1, 2), (0, 1), (0, 2)} 
+    computers_cells = {(1, 1), (0, 0), (1, 2), (0, 1), (0, 2)}
     players_cells = {(1, 0), (2, 1), (2, 2)}
     game = True
     game = check_winner(computers_cells, players_cells)
@@ -24,13 +24,21 @@ def test__check_winner__computer_win():
 
 
 def test__check_winner__player_win():
-    computers_cells = {(1, 1), (0, 0), (1, 2), (0, 1)} 
-    players_cells = {(2, 0), (2, 1), (2, 2)}
+    computers_cells = {(1, 1), (0, 0), (1, 2), (0, 1)}
+    players_cells = {(2, 1), (2, 0), (2, 2)}
     game = True
     game = check_winner(computers_cells, players_cells)
 
     assert game is False
 
+
+def test__check_winner__nobody_win():
+    computers_cells = {(1, 1), (0, 0), (1, 2), (0, 1)} 
+    players_cells = {(2, 0), (2, 1), (0, 2)}
+    game = True
+    game = check_winner(computers_cells, players_cells)
+
+    assert game is True
 
 def test__remove_filled_cells_from_empty__success():
     empty_cells = [(0, 0), (0, 1),
@@ -64,7 +72,6 @@ def test__check_coordinates_for_input__correct_input():
 
 
 def test__check_coordinates_for_input__input_out_of_scope():
-    #не работает
     empty_cells = [(1, 1), (2, 2)]
     x = 3
     y = 4
@@ -72,7 +79,6 @@ def test__check_coordinates_for_input__input_out_of_scope():
 
 
 def test__check_coordinates_for_input__input_out_of_empty_cells():
-    #не работает
     empty_cells = [(1, 1), (2, 2)]
     x = 0
     y = 0
@@ -84,4 +90,3 @@ def test__choice_computers_coordinates__():
     assert choice_computers_coordinates(empty_cells) == (1, 1)
 
 
-    
