@@ -1,0 +1,14 @@
+{
+
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "tic_tac_toe",
+            "type": "python",
+            "request": "launch",
+            "module": "tic_tac",
+            "console": "externalTerminal",
+            "justMyCode": true
+        }
+    ]
+}

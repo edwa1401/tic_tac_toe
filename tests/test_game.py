@@ -1,4 +1,4 @@
-from game import validate_players_coord, check_winner, remove_filled_cells_from_empty, check_coordinates_for_input, choice_computers_coordinates, ParseError
+from tic_tac.game import validate_players_coord, check_winner, remove_filled_cells_from_empty, check_coordinates_for_input, choice_computers_coordinates, ParseError
 import pytest
 
 
